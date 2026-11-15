@@ -1,4 +1,5 @@
 import os
+import time
 import streamlit as st
 from openai import OpenAI, APIConnectionError
 from pydantic import BaseModel, Field
@@ -34,13 +35,21 @@ if st.button("Run Scraper", type="primary"):
             client = OpenAI()
             model_name = "gpt-4o-mini"
 
-        with st.spinner("Opening browser and fetching the page..."):
+        with st.spinner("Opening browser and fetching clean page content..."):
             try:
                 with sync_playwright() as p:
                     browser = p.chromium.launch(headless=True)
                     page = browser.new_page()
                     page.goto(url, wait_until="domcontentloaded", timeout=30000)
-                    page_text = page.inner_text("body")
+                    
+                    page.evaluate("""() => {
+                        const junkElements = document.querySelectorAll('script, style, nav, footer, header, noscript, iframe, aside');
+                        junkElements.forEach(el => el.remove());
+                    }""")
+                    
+                    main_content = page.query_selector('main') or page.query_selector('article') or page.query_selector('body')
+                    page_text = main_content.inner_text() if main_content else page.inner_text("body")
+                    
                     browser.close()
             except Exception as e:
                 st.error(f"Failed to load the page '{url}'. Error details: {e}")
@@ -50,40 +59,56 @@ if st.button("Run Scraper", type="primary"):
             st.warning("The page returned no text. It might be blocking bots or requiring JavaScript that failed to load.")
             st.stop()
 
+        max_chars = 15000
+        if len(page_text) > max_chars:
+            st.info(f"ℹ️ Page content was large ({len(page_text)} chars). Automatically optimized and truncated to the first {max_chars} characters for AI processing.")
+            page_text = page_text[:max_chars]
+
         with st.spinner(f"Processing data using model ({model_name})..."):
-            try:
-                completion = client.beta.chat.completions.parse(
-                    model=model_name,
-                    messages=[
-                        {
-                            "role": "system", 
-                            "content": "You are a precise data extraction assistant. Convert the webpage text into the requested structure."
-                        },
-                        {
-                            "role": "user", 
-                            "content": f"User task: {prompt}\n\nWebpage text:\n\n{page_text[:15000]}"
-                        }
-                    ],
-                    response_format=ScrapedData,
-                )
-                result = completion.choices[0].message.parsed
-            
-            except APIConnectionError:
-                st.error("Cannot connect to the local Ollama server! Make sure 'ollama serve' is running and you have the model downloaded ('ollama pull llama3').")
-                st.stop()
+            result = None
+            max_retries = 3
+            retry_delay = 2
+
+            for attempt in range(max_retries):
+                try:
+                    completion = client.beta.chat.completions.parse(
+                        model=model_name,
+                        messages=[
+                            {
+                                "role": "system", 
+                                "content": "You are a precise data extraction assistant. Convert the webpage text into the requested structure."
+                            },
+                            {
+                                "role": "user", 
+                                "content": f"User task: {prompt}\n\nWebpage clean text:\n\n{page_text}"
+                            }
+                        ],
+                        response_format=ScrapedData,
+                    )
+                    result = completion.choices[0].message.parsed
+                    break
                 
-            except Exception as e:
-                st.error(f"Error communicating with AI: {e}")
-                st.stop()
+                except APIConnectionError:
+                    if attempt == max_retries - 1:
+                        st.error("Cannot connect to the local Ollama server! Make sure 'ollama serve' is running and you have the model downloaded ('ollama pull llama3').")
+                        st.stop()
+                    time.sleep(retry_delay)
 
-        st.success("Successfully done! Extraction result:")
-        
-        result_json = result.model_dump_json(indent=2)
-        st.json(result.model_dump())
+                except Exception as e:
+                    if attempt == max_retries - 1:
+                        st.error(f"Error communicating with AI after {max_retries} attempts: {e}")
+                        st.stop()
+                    time.sleep(retry_delay)
 
-        st.download_button(
-            label="Download result as JSON",
-            data=result_json,
-            file_name="result.json",
-            mime="application/json"
-        )
+        if result:
+            st.success("Successfully done! Extraction result:")
+            
+            result_json = result.model_dump_json(indent=2)
+            st.json(result.model_dump())
+
+            st.download_button(
+                label="Download result as JSON",
+                data=result_json,
+                file_name="result.json",
+                mime="application/json"
+            )
