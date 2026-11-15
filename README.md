@@ -1,6 +1,10 @@
 # 🤖 LLM Web Scraper
 
-Extract data from any website using natural language and AI — locally, for free, and without relying on fragile CSS or XPath selectors.
+Extract structured data from any website using natural language and AI — without writing fragile CSS or XPath selectors.
+
+LLM Web Scraper is a Python-based web scraping application with a Streamlit web interface. It uses Playwright to load websites and AI to extract the information you need.
+
+You can choose between a free local AI model powered by Ollama or OpenAI API.
 
 ## 💡 Why LLM Web Scraper?
 
@@ -9,10 +13,11 @@ Traditional web scraping can be frustrating. Whenever a website changes its desi
 **LLM Web Scraper takes a different approach:**
 
 - 🗣️ **Natural Language Instructions:** Simply describe what you want to extract, for example: "Extract all product names and prices", and let AI handle the rest.
-- 🏠 **Local & Free:** Powered by Ollama and local language models (such as Llama 3). Your data stays on your machine, with no API costs.
-- ☁️ **OpenAI Support:** Prefer cloud-based AI? Simply provide your OpenAI API key and automatically switch to GPT-4o-mini.
-- 🛡️ **User-Friendly Error Handling:** Clear error messages and helpful instructions guide you through common issues, such as a missing Ollama connection.
-- 🧱 **Structured JSON Output:** Uses Pydantic to validate AI responses and provide clean, structured JSON ready for further processing.
+- 🏠 **Local AI with Ollama:** Run AI models locally on your machine. No API key or external AI service required.
+- ☁️ **OpenAI Support:** Prefer cloud-based AI? Use your own OpenAI API key and let GPT-4o-mini process the data.
+- 🌐 **Web Interface:** Easy-to-use Streamlit interface. No need to work with command-line arguments.
+- 🧱 **Structured JSON Output:** Uses Pydantic to validate AI responses and generate structured JSON.
+- 📥 **Download Results:** View extracted data directly in the application and download it as a JSON file.
 
 ## 🚀 Quick Start
 
@@ -22,8 +27,36 @@ Make sure you have the following installed:
 
 - Python 3.10 or newer
 - [Ollama](https://ollama.com/) (optional if you plan to use OpenAI API)
+- A local AI model (if using Ollama)
 
-### 2. Install Ollama (Optional)
+### 2. Clone the Repository
+
+Clone the project and navigate to its directory:
+
+```bash
+git clone https://github.com/Adaamn/LLM-Web-Scraper.git
+cd LLM-Web-Scraper
+```
+
+### 3. Install Dependencies
+
+Install all required Python packages with a single command:
+
+```bash
+pip install -r requirements.txt
+```
+
+Install the Chromium browser required by Playwright:
+
+```bash
+python -m playwright install
+```
+
+### 4. Configure Your AI Provider
+
+LLM Web Scraper supports two AI providers.
+
+#### 🏠 Option 1: Local AI with Ollama (Default)
 
 If you want to run the scraper locally for free, install Ollama.
 
@@ -33,93 +66,36 @@ If you want to run the scraper locally for free, install Ollama.
 irm https://ollama.com/install.ps1 | iex
 ```
 
-**macOS / Linux (Terminal):**
+**macOS:**
+
+Download and install Ollama from:
+https://ollama.com/download
+
+**Linux (Terminal):**
 
 ```bash
 curl -fsSL https://ollama.com/install.sh | sh
 ```
 
-After installation, download the Llama 3 model:
+Make sure Ollama is running before starting the application.
+
+If necessary, start the Ollama server manually:
 
 ```bash
-ollama pull llama3
+ollama serve
 ```
 
-Make sure Ollama is running before proceeding.
+The application connects to Ollama through:
 
-### 3. Clone the Repository
-
-Clone the project and navigate to its directory:
-
-```bash
-git clone https://github.com/Adaamn/LLM-Web-Scraper.git
-cd LLM-Web-Scraper
+```text
+http://localhost:11434/v1
 ```
 
-### 4. Install Dependencies
-
-Install the required Python packages:
-
-### 4. Install Dependencies
-
-Install all required Python packages with a single command:
-
-```bash
-pip install -r requirements.txt
-```
-
-Install the Playwright browser:
-
-```bash
-python -m playwright install
-```
-
-### 5. Run the Scraper
-
-Start the scraper:
-
-```bash
-python scraper.py
-```
-
-The program will interactively ask you for:
-
-1. The website URL you want to scrape.
-2. A description of the data you want to extract.
-
-That's it! Let AI handle the scraping.
-
-## 🤖 AI Providers
-
-LLM Web Scraper supports two AI providers.
-
-### 🏠 Option 1: Local AI with Ollama (Default)
-
-By default, the scraper uses Ollama with the Llama 3 model.
-
-**Advantages:**
-- Completely free to use.
-- No API key required.
-- Data processing stays local.
-- No external AI API costs.
-
-Make sure Ollama is running and the model is downloaded:
-
-```bash
-ollama pull llama3
-```
-
-Then simply run:
-
-```bash
-python scraper.py
-```
-
-### ☁️ Option 2: OpenAI API
+#### ☁️ Option 2: OpenAI API
 
 If you prefer using OpenAI instead of a local model, you can provide your OpenAI API key.
 
-When the `OPENAI_API_KEY` environment variable is detected, the scraper automatically switches to OpenAI and uses `gpt-4o-mini`.
+The application automatically detects the `OPENAI_API_KEY` environment variable and switches to OpenAI using `gpt-4o-mini`.
 
 **Windows (PowerShell):**
 
@@ -133,25 +109,55 @@ $env:OPENAI_API_KEY="your-api-key-here"
 export OPENAI_API_KEY="your-api-key-here"
 ```
 
-After setting your API key, run the scraper normally:
+You can obtain your API key here:
 
-```bash
-python scraper.py
-```
+https://platform.openai.com/api-keys
 
 **Note:** OpenAI API usage is paid and billed according to [OpenAI's pricing](https://openai.com/api/pricing/).
 
-If no API key is provided, the scraper automatically uses local Ollama.
+If an API key is configured, the application uses OpenAI even if the local Ollama checkbox is enabled.
+
+If no API key is configured, the application uses Ollama when local mode is enabled.
+
+### 5. Run the Application
+
+Start the Streamlit web interface:
+
+```bash
+streamlit run app.py
+```
+
+Your browser should automatically open the application.
+
+If it doesn't, open the URL displayed in your terminal (usually):
+
+```text
+http://localhost:8501
+```
+
+## 🖥️ How to Use
+
+Using LLM Web Scraper is simple:
+
+1. **Enter a Website URL:** Provide the URL of the website you want to scrape.
+2. **Describe What to Extract:** Write a natural language instruction describing the information you need.
+3. **Choose Your AI Provider:** Enable or disable the local Ollama checkbox.
+4. **Run the Scraper:** Click the "Run Scraper" button.
+5. **View the Results:** Extracted data will appear directly in the application as structured JSON.
+6. **Download the Results:** Click "Download result as JSON" to save the extracted data to your computer.
+
+That's it! No CSS selectors, XPath expressions, or manual parsing required.
 
 ## 🛠️ How Does It Work?
 
 LLM Web Scraper combines several technologies to simplify web scraping:
 
-1. **Playwright** launches a headless browser, loads the target website (including dynamically rendered content), and extracts the page's text.
-2. **Pydantic** defines a strict data schema that the AI must follow when generating its response.
-3. **Ollama / OpenAI API** processes the extracted webpage content and converts it into the requested structured format.
+1. **Streamlit** provides an interactive web interface for entering URLs, writing extraction instructions, and viewing results.
+2. **Playwright** launches a headless Chromium browser, loads the target website (including dynamically rendered content), and extracts its text.
+3. **Pydantic** defines a structured data schema that the AI must follow when generating its response.
+4. **Ollama / OpenAI API** processes the extracted webpage content and converts it into the requested structured format.
 
-The result is clean, structured JSON without manually writing and maintaining CSS or XPath selectors.
+The extracted data is displayed in the application and can be downloaded as a JSON file.
 
 ## 🤝 Contributing
 
