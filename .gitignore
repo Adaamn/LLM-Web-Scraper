@@ -1,0 +1,38 @@
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Environment variables & API keys
+.env
+.env.*
+!.env.example
+
+#editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Scraper output
+result.json
+*.log
+
+# Playwright
+playwright-report/
+test-results/
