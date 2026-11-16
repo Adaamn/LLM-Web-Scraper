@@ -124,7 +124,7 @@ If no API key is configured, the application uses Ollama when local mode is enab
 Start the Streamlit web interface:
 
 ```bash
-streamlit run app.py
+streamlit run scraper.py
 ```
 
 Your browser should automatically open the application.
